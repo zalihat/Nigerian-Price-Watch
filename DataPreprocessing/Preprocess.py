@@ -52,7 +52,7 @@ class Data:
                 df.index.names = ["Date"]
                 df.reset_index(inplace=True)
                 if all_states_df.shape[0] == 0:
-                    all_states_df = all_states_df.append(df, ignore_index=True)
+                    all_states_df = pd.concat([all_states_df, df], axis=0)
                 else:
                     all_states_df = pd.concat([all_states_df, df], axis=0)
 
