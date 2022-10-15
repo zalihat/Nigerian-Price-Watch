@@ -1,5 +1,6 @@
 import sys
 import pandas as pd
+import numpy as np
 from datetime import date, datetime
 from dateutil.relativedelta import relativedelta
 
@@ -126,7 +127,7 @@ class Data:
         columns = df.columns[1:]
         for column in columns:
             counter, indices = self.find_typo(df, column)
-          
+
             if counter != 0:
                 for i in range(len(indices)):
                     index_ = df.index[indices[i]]
@@ -156,5 +157,63 @@ class Data:
             else:
                 pass
         cols_ = list(columns[:-1])
-        df[cols_] = df[cols_].astype('float')
+        df[cols_] = df[cols_].astype("float")
+
+        return df
+
+    def create_final_df(self):
+        # states and geo political regions
+        North_Central = [
+            "Benue",
+            "ABUJA",
+            "Kogi",
+            "Kwara",
+            "NASSARAWA",
+            "Niger",
+            "Plateau",
+        ]
+        North_Central = [x.upper() for x in North_Central]
+        North_East = ["Adamawa", "Bauchi", "Borno", "Gombe", "Taraba", "Yobe"]
+        North_East = [x.upper() for x in North_East]
+        North_West = [
+            "Kaduna",
+            "Katsina",
+            "Kano",
+            "Kebbi",
+            "Sokoto",
+            "Jigawa",
+            "Zamfara",
+        ]
+        North_West = [x.upper() for x in North_West]
+        South_East = ["Abia", "Anambra", "Ebonyi", "Enugu", "Imo"]
+        South_East = [x.upper() for x in South_East]
+        South_South = ["Akwa_Ibom", "Bayelsa", "Cross_River", "Delta", "Edo", "Rivers"]
+        South_South = [x.upper() for x in South_South]
+        South_West = ["Ekiti", "Lagos", "Osun", "Ondo", "Ogun", "Oyo"]
+        South_West = [x.upper() for x in South_West]
+        df = self.fix_typos()
+        df["Date"] = pd.to_datetime(df["Date"], format="%Y/%m")
+        df["Month"] = df["Date"].dt.month
+        df["Year"] = df["Date"].dt.year
+        conditions = [
+            df.State.isin(North_Central),
+            df.State.isin(North_East),
+            df.State.isin(North_West),
+            df.State.isin(South_East),
+            df.State.isin(South_South),
+            df.State.isin(South_West),
+            df.State == "NATIONAL",
+        ]
+
+        # create a list of the values we want to assign for each condition
+        regions = [
+            "North_Central",
+            "North_East",
+            "North_West",
+            "South_East",
+            "South_South",
+            "South_West",
+            "NATIONAL",
+        ]
+        df["Region"] = np.select(conditions, regions)
         return df

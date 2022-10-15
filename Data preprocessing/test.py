@@ -9,7 +9,7 @@ month_year = 'august 2022'
 food_crawler = Crawler(url, commodity, month_year)
 data_link = food_crawler.get_data_link(food_crawler.get_page_link())
 preprocess_food = Data(data_link)
-df = preprocess_food.fix_typos()
+df = preprocess_food.create_final_df()
 print(df.head())
 print(df.shape)
 print(df.tail())
