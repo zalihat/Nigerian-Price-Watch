@@ -8,11 +8,11 @@ from dateutil.relativedelta import relativedelta
 sys.path.insert(0, "..")
 from DataScraping.crawler import Crawler
 
-url = "https://nigerianstat.gov.ng/elibrary"
-commodity = "food price"
-month_year = "august 2022"
-food_crawler = Crawler(url, commodity, month_year)
-data_link = food_crawler.get_data_link(food_crawler.get_page_link())
+# url = "https://nigerianstat.gov.ng/elibrary"
+# commodity = "food price"
+# month_year = "august 2022"
+# food_crawler = Crawler(url, commodity, month_year)
+# data_link = food_crawler.get_data_link(food_crawler.get_page_link())
 
 
 import pandas as pd
@@ -21,21 +21,26 @@ from dateutil.relativedelta import relativedelta
 
 
 class Data:
-    def __init__(self, data_link):
-        self.data_link = data_link
+    def __init__(self, url, commodity, month_year, data_backup_path):
+        self.url = url
+        self.commodity = commodity
+        self.month_year = month_year
+        self.data_backup_path =  data_backup_path
 
-    def create_df(self, data_backup_path):
+
+    def create_df(self):
         try:
-            data = pd.ExcelFile(self.data_link)
-            return data
+            food_crawler = Crawler(self.url, self.commodity, self.month_year)
+            data_link = food_crawler.get_data_link(food_crawler.get_page_link())  
+            data = pd.ExcelFile(data_link)
         except:
             print("Cannot reach website")
-            data = pd.ExcelFile(data_backup_path)
-            return data
+            data = pd.ExcelFile(self.data_backup_path)
+        return data
 
     def get_all_states(self, kind="data", state="ABUJA"):
-        path = "SELECTED FOOD AUGUST 2022.xlsx"
-        data_frame = self.create_df(path)
+        # path = "SELECTED FOOD AUGUST 2022.xlsx"
+        data_frame = self.create_df()
         state = state.upper()
         all_states_df = pd.DataFrame()
         for state in data_frame.sheet_names[1:]:
