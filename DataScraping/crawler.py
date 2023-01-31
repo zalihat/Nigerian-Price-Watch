@@ -23,7 +23,8 @@ class Crawler:
         soup = BeautifulSoup(response, "html.parser")
         for tr in soup.find_all("tr"):
             rw = tr.findAll("td")
-            if self.commodity in tr.text.lower() and self.month_year in tr.text.lower():
+            # if self.commodity in tr.text.lower() and self.month_year in tr.text.lower():
+            if self.commodity in tr.text.replace(' ', '').lower() and self.month_year in tr.text.lower():
                 result = rw
         links = []
         for a in result[-1].find_all("a", href=True):

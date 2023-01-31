@@ -25,7 +25,7 @@ def test_process_data():
     month_year = 'august 2022'
     food_crawler = Crawler(url, commodity, month_year)
     data_link = food_crawler.get_data_link(food_crawler.get_page_link())
-    preprocess_food = Data(data_link)
+    preprocess_food = Data(data_link, 'SELECTED FOOD AUGUST 2022.xlsx')
     df = preprocess_food.create_final_df()
     assert df.shape[0] > 68 
     assert len(df.State.unique()) >= 36
