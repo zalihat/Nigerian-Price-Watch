@@ -266,6 +266,33 @@ class Data:
         df["Region"] = np.select(conditions, regions)
         return df
 
+class CookingGas(Data):
+  def get_all_states(self):
+    gas_df = self.create_df()
+    sheet_names = gas_df.sheet_names
+    gas_5kg = gas_df.parse(sheet_names[1])
+    gas_5kg = gas_5kg.iloc[2:,:]
+    gas_5kg.columns = gas_5kg.iloc[0,:]
+    gas_5kg = gas_5kg.iloc[1:, :]
+    gas_5kg.drop('ITEM LABEL', inplace =True, axis = 1)
+    dfT = gas_5kg.transpose()
+    dfT.head()
+    dfT.columns = dfT.iloc[0, :]
+    dfT.head()
+    df = dfT.iloc[
+    1:,
+    ]
+    # df.loc[:, "State"] = state
+    df.index.names = ["Date"]
+    df.reset_index(inplace=True)
+    df = df.loc[:, :'Zamfara']
+    # df.iloc[:, 0] = df.iloc[:, 0].
+    df["Date"] = pd.to_datetime(df["Date"], format="%Y/%m")
+    df.iloc[:, 1:] = df.iloc[:, 1:].astype(float)
+    gas_kg = df.copy()
+    gas_kg.iloc[:, 1:] = (gas_kg.iloc[:, 1:] / 5).round(1)
+    return gas_kg
+
 
 @click.command()
 @click.argument("url", type=str)
@@ -291,15 +318,26 @@ def main(
     :return: None
     """
     month_year = " ".join([str(month).replace("'", ""), str(year).replace("'", "")])
-    commodity = "".join([str(commodity).lower().replace("'", ""), "prices"])
+    commodity = str(commodity).lower().replace("'", "")
     url = str(url).replace("'", "")
     path_or_buf = str(path_or_buf).replace("'", "")
     data_backup_path = str(data_backup_path).replace("'", "")
-    food_crawler = Crawler(url, commodity, month_year)
-    page_link = food_crawler.get_page_link()
-    data_link = food_crawler.get_data_link(page_link)
-    preprocess_food = Data(data_link, data_backup_path)
-    df = preprocess_food.create_final_df()
+    if commodity == 'food':
+        commodity = "".join([commodity, 'prices'])
+        food_crawler = Crawler(url, commodity, month_year)
+        page_link = food_crawler.get_page_link()
+        data_link = food_crawler.get_data_link(page_link)
+        preprocess_food = Data(data_link, data_backup_path)
+        df = preprocess_food.create_final_df()
+    elif commodity == 'cookinggas':
+        gas_crawler = Crawler(url, commodity, month_year)
+        page_link = gas_crawler.get_page_link()
+        data_link = gas_crawler.get_data_link(page_link)
+        process_cooking_gas = CookingGas(data_link, data_backup_path)
+        df = process_cooking_gas.fix_typos()
+    else:
+        pass
+    print(df.head())
     df.to_csv(path_or_buf, index=None)
 
 
