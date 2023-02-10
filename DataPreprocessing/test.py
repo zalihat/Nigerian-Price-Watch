@@ -17,6 +17,8 @@ print(df.tail())
 # print(len(df.State.unique()))
 # print(df.info())
 
-# python Preprocess.py 'https://nigerianstat.gov.ng/elibrary' 'food' 'september' 2022 'data.csv'
 
-# python Preprocess.py "https://nigerianstat.gov.ng/elibrary" "food" "december" 2022 "SELECTED FOOD DECEMEBER 2022.xlsx" "data.csv"                                               
+'''
+ python Preprocess.py "https://nigerianstat.gov.ng/elibrary" "food" "december" 2022 "SELECTED FOOD DECEMEBER 2022.xlsx" "data.csv"            
+ python Preprocess.py "https://nigerianstat.gov.ng/elibrary" "cookinggas" "december" 2022 "GAS PRICE WATCH DECEMBER 2022.xlsx" "gas_data.csv"  
+'''                                      

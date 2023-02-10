@@ -318,10 +318,15 @@ def main(
     :return: None
     """
     month_year = " ".join([str(month).replace("'", ""), str(year).replace("'", "")])
+    # commodity = "".join([str(commodity).lower().replace("'", ""), "prices"])
     commodity = str(commodity).lower().replace("'", "")
     url = str(url).replace("'", "")
     path_or_buf = str(path_or_buf).replace("'", "")
     data_backup_path = str(data_backup_path).replace("'", "")
+
+    # food_crawler = Crawler(url, commodity, month_year)
+    # page_link = food_crawler.get_page_link()
+    # data_link = food_crawler.get_data_link(page_link)
     if commodity == 'food':
         commodity = "".join([commodity, 'prices'])
         food_crawler = Crawler(url, commodity, month_year)
@@ -337,8 +342,7 @@ def main(
         df = process_cooking_gas.fix_typos()
     else:
         pass
-    print(df.head())
-    df.to_csv(path_or_buf, index=None)
+    print(df.head())#df.to_csv(path_or_buf, index=None)
 
 
 if __name__ == "__main__":
