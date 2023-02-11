@@ -319,6 +319,31 @@ class HouseholdKerosene(Data):
         return kero_df
 
 
+class Diesel(Data):
+    def get_all_states(self):
+        diesel_df = self.create_df()
+        sheet_names = diesel_df.sheet_names
+        diesel_df = diesel_df.parse(sheet_names[1])
+        diesel_df = diesel_df.iloc[2:, :]
+        diesel_df.columns = diesel_df.iloc[0, :]
+        diesel_df = diesel_df.iloc[1:, :]
+        diesel_df.drop(["ITEMLABELS"], inplace=True, axis=1)
+        dfT = diesel_df.transpose()
+        dfT.head()
+        dfT.columns = dfT.iloc[0, :]
+        dfT.head()
+        df = dfT.iloc[
+            1:,
+        ]
+        df.index.names = ["Date"]
+        df.reset_index(inplace=True)
+        df = df.loc[:, :"Zamfara"]
+        df["Date"] = pd.to_datetime(df["Date"], format="%Y/%m")
+        df.iloc[:, 1:] = df.iloc[:, 1:].astype(float)
+        df.iloc[:, 1:] = (df.iloc[:, 1:]).round(1)
+        return df
+
+
 @click.command()
 @click.argument("url", type=str)
 @click.argument("commodity", type=str)
@@ -366,6 +391,12 @@ def main(
         data_link = kero_crawler.get_data_link(page_link)
         process_cooking_kero = HouseholdKerosene(data_link, data_backup_path)
         df = process_cooking_kero.fix_typos()
+    elif commodity == "diesel":
+        diesel_crawler = Crawler(url, commodity, month_year)
+        page_link = diesel_crawler.get_page_link()
+        data_link = diesel_crawler.get_data_link(page_link)
+        process_cooking_diesel = Diesel(data_link, data_backup_path)
+        df = process_cooking_diesel.fix_typos()
     else:
         pass
     print(df.head())

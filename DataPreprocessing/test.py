@@ -21,4 +21,6 @@ print(df.tail())
 '''
  python Preprocess.py "https://nigerianstat.gov.ng/elibrary" "food" "december" 2022 "SELECTED FOOD DECEMEBER 2022.xlsx" "data.csv"            
  python Preprocess.py "https://nigerianstat.gov.ng/elibrary" "cookinggas" "december" 2022 "GAS PRICE WATCH DECEMBER 2022.xlsx" "gas_data.csv"  
+ python Preprocess.py "https://nigerianstat.gov.ng/elibrary" "householdkerosene" "december" 2022 "HOUSEHOLD KEROSENE JAN 2015 - DEC  2022.xlsx" "kero_data.csv"
+ python Preprocess.py "https://nigerianstat.gov.ng/elibrary" "diesel" "december" 2022 "DIESEL JUNE 2015 - DECEMBER 2022.xlsx" "diesel.csv"
 '''                                      
