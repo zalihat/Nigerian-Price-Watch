@@ -3,3 +3,8 @@
 /.pytest_cache
 /.vscode
 **/__pycache__/
+dataold.py 
+index.py
+**/data
+execute.py
+/.ipynb_checkpoints
