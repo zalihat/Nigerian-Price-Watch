@@ -17,6 +17,9 @@ from data import (
     get_current_price,
     get_lowest_five,
     get_highest_five,
+    MoM,
+    YoY,
+    month_average
 )
 
 external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
@@ -73,7 +76,7 @@ app.layout = html.Div(
                     id='my-date-picker-range',
                     min_date_allowed=date(2015, 1, 1),
                     max_date_allowed=date(2022, 12, 1),
-                    initial_visible_month=date(2022, 12, 1),
+                    initial_visible_month=date(2022, 1, 1),
                     end_date=date(2022, 12, 1),
                     start_date=date(2022, 1, 1),
                     style={
@@ -267,8 +270,8 @@ app.layout = html.Div(
                                     },
                                 ),
                                 html.P(
-                                    children="-2.4",
-                                    # id="highest",
+                                    children="",
+                                    id="MoM",
                                     style={"fontSize": "2em", "fontWeight": "bold"},
                                 ),
                             ],
@@ -298,8 +301,8 @@ app.layout = html.Div(
                                     },
                                 ),
                                 html.P(
-                                    children="4.5",
-                                    # id="highest",
+                                    children="",
+                                    id="YoY",
                                     style={"fontSize": "2em", "fontWeight": "bold"},
                                 ),
                             ],
@@ -334,6 +337,17 @@ app.layout = html.Div(
         html.Div(
             [
                 html.Div(
+                    [
+                        # html.P(
+                        #     children= "Lowest Five states"
+                        # ),
+                        dcc.Graph(
+                            id="monthly-average",
+                        )
+                    ],
+                    className="col-lg-4 col-12 col-md-12 mb-3",
+                ),
+             html.Div(
                     [
                         # html.P(
                         #     children= "Lowest Five states"
@@ -392,6 +406,15 @@ def highest_five( product):
     fig = get_highest_five( product)
     return fig
 
+@app.callback(
+    Output("monthly-average", "figure"),
+    Input("states-dropdown", "value"),
+    Input("product-type", "value"),
+)
+def update_monthly_avg(state, product):
+    fig = month_average( state, product)
+    return fig
+
 
 @app.callback(
     Output("current-price", "children"),
@@ -421,6 +444,23 @@ def lowest_price(product):
 def highest_price(product):
     highest = get_highest_price(product)
     return highest
+
+@app.callback(
+    Output("MoM", "children"),
+    Input("states-dropdown", "value"),
+    Input("product-type", "value"),
+)
+def Update_MoM(state, product):
+    perc = MoM(state , product)
+    return perc
+@app.callback(
+    Output("YoY", "children"),
+    Input("states-dropdown", "value"),
+    Input("product-type", "value"),
+)
+def Update_YoY(state, product):
+    perc = YoY(state , product)
+    return perc
 
 
 if __name__ == "__main__":
