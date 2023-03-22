@@ -6,7 +6,7 @@ from DataScraping.crawler import Crawler
 from DataPreprocessing.Preprocess import Data
 import plotly.express as px
 import plotly.graph_objects as go
-
+import calendar
 
 import pandas as pd
 
@@ -135,6 +135,57 @@ def get_highest_price(product):
         max_price = df[product]
 
     return '{} ({})'.format(max_state, round(max_price, 1))
+
+def MoM(state, product):
+    data = Dashboard()
+    df = data.get_df(product) 
+    if product in ['Cooking gas', 'Diesel', 'Household kerosine']:
+        df = df.tail(2)
+        df = df[['Date', state.title()]]
+        prev_month = df.iloc[0,1] 
+        current_month = df.iloc[1, 1] 
+        MoM = (current_month - prev_month) / prev_month
+        MoM = round(MoM * 100, 2)
+    else:
+        state = '_'.join(state.split(' '))
+        df = df.query("State == @state")[['Date', product, 'State']]
+        df = df.tail(2)
+        prev_month = df.iloc[0,1] 
+        current_month = df.iloc[1, 1] 
+        MoM = (current_month - prev_month) / prev_month
+        MoM = round(MoM * 100, 2)
+
+    return '{}%'.format(MoM)
+
+def YoY(state, product):
+    data = Dashboard()
+    df = data.get_df(product) 
+    if product in ['Cooking gas', 'Diesel', 'Household kerosine']:
+        df["Date"] = pd.to_datetime(df["Date"], format="%Y/%m")
+        df["Month"] = df["Date"].dt.month
+        df["Year"] = df["Date"].dt.year
+        latest = df.tail(1)
+        current_month = latest.Month.values[0]
+        df = df[df.Month == current_month]
+        df = df.tail(2)
+        df = df[['Date', state.title()]]
+        prev_year = df.iloc[0,1] 
+        current_year = df.iloc[1, 1]
+        YoY = (current_year - prev_year) / prev_year
+        YoY = round(YoY * 100, 2)
+    else:
+        state = '_'.join(state.split(' '))
+        df = df.query("State == @state")[['Date', product, 'Month']]
+        latest = df.tail(1)
+        current_month = latest.Month.values[0]
+        df = df[df.Month == current_month]
+        df = df[['Date', product]]
+        df = df.tail(2)
+        prev_year = df.iloc[0,1] #4549.14
+        current_year = df.iloc[1, 1] #4565.56
+        YoY = (current_year - prev_year) / prev_year
+        YoY = round(YoY * 100, 2)
+    return '{}%'.format(YoY)
     
 
 
@@ -162,11 +213,12 @@ def foodpriceGraph(state, product):
         # state = ['_'.join(state.split(' ')) for state in state]
         df = df[df['State'] ==  state]
         # df = df[df['State'].isin(state)]
-        fig = px.line(df, x=df.Date, y=product, color="State")
+        fig = px.area(df, x=df.Date, y=product, color="State")
     else:
-        fig = px.line(df, x=df.Date, y =state.title(), labels={state.title(): product})
+        fig = px.area(df, x=df.Date, y =state.title(), labels={state.title(): product})
     fig.update_xaxes(
         # rangeslider_visible=True,
+        # line_color='purple',
         rangeselector=dict(
             buttons=list(
                 [
@@ -178,6 +230,8 @@ def foodpriceGraph(state, product):
             )
         )
     )
+    # fig.update_traces(line_color='green')
+
     return fig 
 def get_lowest_five(product):
     data = Dashboard()
@@ -186,9 +240,9 @@ def get_lowest_five(product):
     
     if product in ['Cooking gas', 'Diesel', 'Household kerosine']:
         df= df.loc[df.index[-1]]
-        df = df.iloc[1:].sort_values()[:6]
+        df = df.iloc[1:].sort_values()[:3]
         df = df.reset_index(name = 'Price')
-        fig = px.bar(df, x =df['index'], y = df['Price'], title='Lowest Five states', text= df['Price'])
+        fig = px.bar(df, x =df['index'], y = df['Price'], title='States with the lowest average prices', text= df['Price'])
         # fig.update_traces(textposition="outside")
         fig.update_traces(textfont_size=12, textangle=0, textposition="outside", cliponaxis=False)
     else:
@@ -196,8 +250,9 @@ def get_lowest_five(product):
         max_year = df.Year.max()
         df = df.query("Month == @max_month and Year == @max_year")
         df = df.groupby(['State', 'Date'])[product].max().reset_index().sort_values(by = product)
-        df = df.iloc[:6, :]
-        fig = px.bar(df, x =df['State'], y = df[product], title='Lowest Five states', text = df[product])
+        df = df.iloc[:3, :]
+        df = df.round(1)
+        fig = px.bar(df, x =df['State'], y = df[product], title='States with the lowest average prices', text = df[product])
         # fig.update_traces(textposition="outside")
         fig.update_traces(textfont_size=12, textangle=0, textposition="outside", cliponaxis=False)
     return fig
@@ -209,20 +264,20 @@ def get_highest_five(product):
     
     if product in ['Cooking gas', 'Diesel', 'Household kerosine']:
         df= df.loc[df.index[-1]]
-        df = df.iloc[1:].sort_values()[-6:]
+        df = df.iloc[1:].sort_values(ascending = False)[-3:]
         df = df.reset_index(name = 'Price')
-        fig = px.bar(df, x =df['index'], y = df['Price'], title='Highest Five states', text= df['Price'])
+        fig = px.bar(df, x =df['index'], y = df['Price'], title='States with the highest average prices', text= df['Price'])
         
     else:
         max_month = df.Month.max()
         max_year = df.Year.max()
         df = df.query("Month == @max_month and Year == @max_year")
-        df = df.groupby(['State', 'Date'])[product].max().reset_index().sort_values(by = product)
-        df = df.iloc[-6:, :]
+        df = df.groupby(['State', 'Date'])[product].max().reset_index().sort_values(by = product, ascending = False)
+        df = df.iloc[-3:, :]
         # df.drop('Date', axis = 1, inplace = True)
         df = df.round(1)
         # df[product] = round
-        fig = px.bar(df, x =df['State'], y = df[product], title='Highest Five states', text = df[product])
+        fig = px.bar(df, x =df['State'], y = df[product], title='States with the highest average prices', text = df[product])
         # fig = go.Figure(data=[go.Table(
         #     header=dict(values=list(df.columns),
         #                 fill_color='paleturquoise',
@@ -234,5 +289,26 @@ def get_highest_five(product):
     fig.update_traces(textfont_size=12, textangle=0, textposition="outside", cliponaxis=False)
     return fig
 
-
+def month_average(state, product):
+    data = Dashboard()
+    df = data.get_df(product) 
+    df["Date"] = pd.to_datetime(df["Date"], format="%Y/%m")
+    if product in ['Cooking gas', 'Diesel', 'Household kerosine']:
+        state = state.title()
+        df["Date"] = pd.to_datetime(df["Date"], format="%Y/%m")
+        df["Month"] = df["Date"].dt.month
+        df[['Date', state]]
+        gp = df.groupby(['Month'])[state].mean().reset_index()
+        gp['Month'] = gp['Month'].apply(lambda x: calendar.month_abbr[x])
+        gp = gp.round(1) 
+        fig = px.bar(gp, x = gp['Month'], y = gp[state], title='Monthly average')
+    else:
+        state = '_'.join(state.split(' '))
+        df = df.query("State == @state")[['Date', product, 'State', 'Month']]
+        gp = df.groupby(['Month'])[product].mean().reset_index()
+        gp['Month'] = gp['Month'].apply(lambda x: calendar.month_abbr[x])
+        gp = gp.round(1)    
+        fig = px.bar(gp, x = gp['Month'], y = gp[product], title='Monthly average')
+    # fig.update_traces(textfont_size=12, textangle=0, textposition="outside", cliponaxis=False)
+    return fig
 
