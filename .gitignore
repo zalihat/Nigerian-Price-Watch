@@ -6,5 +6,6 @@
 dataold.py 
 index.py
 **/data
+**/datasets
 execute.py
 /.ipynb_checkpoints
