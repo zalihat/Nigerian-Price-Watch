@@ -17,7 +17,7 @@ python Preprocess.py "https://nigerianstat.gov.ng/elibrary"
 import sys
 from datetime import date, datetime
 
-import click
+# import click
 import numpy as np
 import pandas as pd
 from dateutil.relativedelta import relativedelta
@@ -240,7 +240,8 @@ class Data:
         South_West = ["Ekiti", "Lagos", "Osun", "Ondo", "Ogun", "Oyo"]
         South_West = [x.upper() for x in South_West]
         df = self.fix_typos()
-        df["Date"] = pd.to_datetime(df["Date"], format="%Y/%m")
+        # return df
+        df["Date"] = pd.to_datetime(df["Date"])
         df["Month"] = df["Date"].dt.month
         df["Year"] = df["Date"].dt.year
         conditions = [
@@ -263,7 +264,8 @@ class Data:
             "South_West",
             "NATIONAL",
         ]
-        df["Region"] = np.select(conditions, regions)
+        df["Region"] = np.select(conditions, regions, default="Unknown")
+        df.to_csv('data/clean.csv')
         return df
 
 

@@ -54,7 +54,7 @@ def download_and_save_excel(url):
     Args:
         url (str): The URL of the file to download.
     """
-    raw_data_dir = 'data/raw/'
+    raw_data_dir = 'data/bronze/'
     os.makedirs(raw_data_dir, exist_ok=True)  # Create the directory if it doesn't exist
 
     try:
@@ -93,3 +93,4 @@ for i in all_pages_link:
 print(all_data_link)
 for i in all_data_link:
   download_and_save_excel(i)
+  
