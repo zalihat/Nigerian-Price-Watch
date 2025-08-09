@@ -1,0 +1,54 @@
+1. Real-Time Price Alerts
+Push/email/WhatsApp alerts when a product’s price spikes or drops.
+
+Optional price threshold settings: “Notify me if garri drops below ₦X.”
+
+2. Predictive Analytics
+Use historical trends + machine learning to predict future price movements.
+
+Show a "Stock Now" or "Wait" recommendation.
+
+Weather + market factors correlation (e.g., onion price spike post-rainy season).
+
+3. Visual Dashboards
+Heatmaps showing cheapest regions for each food item.
+
+Time series graphs of price changes per item.
+
+Inflation tracker across weeks/months.
+
+4. Crowdsourced Price Inputs
+Let users in different regions report local market prices.
+
+Build a "community trust score" to filter legit reports.
+
+This decentralizes data gathering, especially in under-documented areas.
+
+5. WhatsApp Bot Integration
+People can send “How much is rice in Ibadan?” to the bot and get a reply.
+
+Great for market women and small biz owners without smartphone apps.
+
+6. Bulk Buyer Tools
+Notifications when it’s the best time to stock in bulk.
+
+Estimate how long stock will last based on average price cycles.
+
+7. API Access
+Give NGOs, businesses, and researchers access to your data.
+
+Monetize this part if you want.
+
+8. Trend Spotter / News Integration
+Pull in related headlines (e.g., fuel scarcity, border closures) and link to price spikes.
+
+AI-based cause analysis: “Tomato prices up 25% – likely due to transport issues.”
+
+9. Localization & Vernacular Names
+Multiple Nigerian languages support (Yoruba, Hausa, Igbo, Pidgin).
+
+Allow users to search “garri,” “eba,” “cassava flakes” and still find the same item.
+
+10. Smart Shopping List
+User builds a shopping list and app tells you the cheapest time/location to buy everything on it.
+
