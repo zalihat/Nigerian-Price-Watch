@@ -166,9 +166,6 @@ class IngestData:
 
         print("✅ Incremental download complete.")
 
-        # for i in all_data_link:
-        #     self.download_and_save_excel(i, output_dir)
-            # add incremental load strategy here
     
 
         
