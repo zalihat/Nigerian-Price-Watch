@@ -10,3 +10,7 @@ index.py
 execute.py
 /.ipynb_checkpoints
 .qodo
+.terraform/
+*.tfstate
+*.tfstate.backup
+crash.log

@@ -13,7 +13,7 @@ import os
 # from DataScraping.crawler import Crawler
 
 
-class Data:
+class CleanData:
     def assign_regions_and_dates(self,df):
         # Define regions using a dictionary
         region_map = {
