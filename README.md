@@ -1,71 +1,112 @@
-# **Nigerian-Price-Watch**
+📊 Nigerian Price Tracker – Data Engineering Pipeline
+📌 Project Overview
 
-## Overview
-This project is a price tracker for various products in Nigeria. It scrapes data from multiple sources, cleans the data using Python, and visualizes it through a dashboard created using Power BI.
+This project implements a scalable data engineering pipeline on AWS to track and analyze product prices in Nigeria.
 
-## Features
+Data Ingestion → AWS Lambda scrapes product prices from multiple government and public sources and stores raw data in Amazon S3 (Bronze Layer).
 
+Data Processing → AWS Glue cleans, transforms, and structures the raw files into analysis-ready datasets in S3 (Silver Layer).
 
+Data Orchestration → AWS Step Functions automate the workflow (ingestion → transformation → storage) with error handling and retries.
 
-**Data scraping**: Python scripts ([DataScraping](https://github.com/zalihat/Nigerian-Price-Watch/tree/master/DataScraping)) are used to scrape data from [National bureau of statistics ](https://nigerianstat.gov.ng/) 
+Data Consumption → Processed datasets (Gold Layer) are connected to Power BI for interactive dashboards and insights.
 
-**Data cleaning**: The scraped data is cleaned and processed to remove duplicates, handle missing values, and standardize formats
+This setup follows the modern data lake architecture with Bronze, Silver, and Gold layers, enabling scalability, automation, and cost efficiency.
 
-**Dashboard**: A Power BI dashboard is created to visualize the cleaned data and track the prices of different products over time
+🌍 Project Impact
 
-## Requirements
+Transparency in Market Prices → Provides citizens, businesses, and policymakers with up-to-date product prices across Nigeria.
 
- * Python 3
- * Libraries: [requirements.txt](https://github.com/zalihat/Nigerian-Price-Watch/blob/master/requirements.txt)
- * Power BI Desktop (for viewing/editing the dashboard)
- 
- ## Installation
- 
- 1. Clone the repository: git clone https://github.com/zalihat/Nigerian-Price-Watch.git
- 
- 2. Install dependencies: pip install -r requirements.txt
- 
- 3. Open the Power BI dashboard file (.pbix) using Power BI Desktop
+Data-Driven Decisions → Enables researchers and organizations to analyze price fluctuations, inflation, and regional disparities.
 
- ## Usage
- 
- 1. Run the Python scripts to scrape and clean the data.
- 2. Open the Power BI dashboard to visualize the cleaned data.
-<!-- <img src="./2/to/img.jpg" alt="Dashboard /> -->
+Accessibility → Cloud-native pipeline ensures data is queryable and visualizable at scale.
 
-<!-- <img src="Dashboard\dasboard.PNG" alt="Dashboard" /> -->
+Scalability for Future Growth → Extendable to other sectors (agriculture, energy, trade) and supports predictive analytics for price forecasting.
 
+⚙️ Architecture
+![pipeline Architecture](./Doc/Architecture%20diagram.jpg)
 
-## To get the dataset
+🚀 Setup Instructions
+1️⃣ Prerequisites
 
-```
-pip install -r requirements.txt
-```
-```
-cd DataPreprocessing
-```
+Terraform
+ installed
 
-```
-python Preprocess.py URL COMMODITY MONTH YEAR DATA_BACKUP_PATH PATH_OR_BUFFER
-````
+AWS account with programmatic access (IAM user with AdministratorAccess recommended for testing)
 
-<p>Example</p>
+Python 3.9+ for Lambda functions
 
-To get the price of selected food for december 2022
-```
-python Preprocess.py "https://nigerianstat.gov.ng/elibrary"  "food" "december" 2022 "SELECTED FOOD DECEMEBER 2022.xlsx" "data.csv"
+2️⃣ Infrastructure Deployment
 
-```
+Clone this repository:
+
+git clone https://github.com/<your-username>/nigerian-price-tracker.git
+cd nigerian-price-tracker
 
 
+Initialize Terraform:
 
-## Contributing
-
-Contributions are welcome! Please fork the repository and submit a pull request with your changes.
-
-## Acknowledgements
-
-Thanks to https://nigerianstat.gov.ng for providing the data.
+terraform init
 
 
+Apply the infrastructure:
 
+terraform apply
+
+
+This will create:
+
+S3 buckets (Bronze, Silver, Gold layers)
+
+Lambda ingestion function
+
+AWS Glue jobs for cleaning/transformation
+
+Step Functions workflow
+
+3️⃣ Running the Pipeline
+
+The Step Function orchestrates the pipeline.
+
+It will:
+
+Trigger the Lambda scraper to pull fresh data into Bronze (S3).
+
+Run Glue transformations to produce Silver and Gold datasets.
+
+Store final outputs in Gold (S3) for Power BI.
+
+4️⃣ Visualization in Power BI
+
+Open Power BI Desktop.
+
+Connect to the S3 Gold bucket via AWS Athena
+.
+
+Build dashboards to analyze price trends.
+
+📂 Repository Structure
+├── terraform/                # Terraform IaC for AWS resources
+│   ├── main.tf               # AWS infra (S3, Lambda, Glue, Step Functions)
+│   ├── variables.tf
+│   └── outputs.tf
+├── lambda/                   # Lambda ingestion function
+│   └── ingest_data.py
+├── glue/                     # AWS Glue scripts
+│   └── clean_data.py
+├── README.md                 # Project documentation
+
+💡 Future Enhancements
+
+Add CI/CD pipeline for Terraform + Lambda deployment
+
+Integrate Airflow on MWAA for complex orchestration
+
+Build real-time dashboards with AWS QuickSight or Kafka + Spark streaming
+
+🏆 Impact Statement
+
+This project demonstrates how cloud-based data engineering can drive transparency, accessibility, and decision-making in emerging economies.
+By enabling citizens, policymakers, and businesses to analyze prices at scale, it supports economic planning, inflation tracking, and market research in Nigeria.
+
+Would you like me to also create a shorter “executive summary” version of this README for LinkedIn/portfolio highlights (less technical, more impact-focused)?
