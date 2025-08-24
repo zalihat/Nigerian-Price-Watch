@@ -1,19 +1,20 @@
-📊 Nigerian Price Tracker – Data Engineering Pipeline
-📌 Project Overview
+# 📊 Nigerian Price Tracker – Data Engineering Pipeline
+
+### 📌Project Overview
 
 This project implements a scalable data engineering pipeline on AWS to track and analyze product prices in Nigeria.
 
-Data Ingestion → AWS Lambda scrapes product prices from multiple government and public sources and stores raw data in Amazon S3 (Bronze Layer).
+**Data Ingestion →** AWS Lambda scrapes product prices from multiple government and public sources and stores raw data in Amazon S3 (Bronze Layer).
 
-Data Processing → AWS Glue cleans, transforms, and structures the raw files into analysis-ready datasets in S3 (Silver Layer).
+**Data Processing** → AWS Glue cleans, transforms, and structures the raw files into analysis-ready datasets in S3 (Silver Layer).
 
-Data Orchestration → AWS Step Functions automate the workflow (ingestion → transformation → storage) with error handling and retries.
+**Data Orchestration →** AWS Step Functions automate the workflow (ingestion → transformation → storage) with error handling and retries.
 
-Data Consumption → Processed datasets (Gold Layer) are connected to Power BI for interactive dashboards and insights.
+**Data Consumption →** Processed datasets (Gold Layer) are connected to Power BI for interactive dashboards and insights.
 
 This setup follows the modern data lake architecture with Bronze, Silver, and Gold layers, enabling scalability, automation, and cost efficiency.
 
-🌍 Project Impact
+### 🌍 Project Impact
 
 Transparency in Market Prices → Provides citizens, businesses, and policymakers with up-to-date product prices across Nigeria.
 
@@ -23,10 +24,11 @@ Accessibility → Cloud-native pipeline ensures data is queryable and visualizab
 
 Scalability for Future Growth → Extendable to other sectors (agriculture, energy, trade) and supports predictive analytics for price forecasting.
 
-⚙️ Architecture
+### ⚙️ Architecture
 ![pipeline Architecture](./Doc/Architecture%20diagram.jpg)
 
-🚀 Setup Instructions
+### 🚀 Setup Instructions
+
 1️⃣ Prerequisites
 
 Terraform
@@ -40,8 +42,8 @@ Python 3.9+ for Lambda functions
 
 Clone this repository:
 
-git clone https://github.com/<your-username>/nigerian-price-tracker.git
-cd nigerian-price-tracker
+git clone https://github.com/zalihat/Nigerian-Price-Watch.git
+cd nigerian-price-watch
 
 
 Initialize Terraform:
@@ -86,15 +88,8 @@ Connect to the S3 Gold bucket via AWS Athena
 Build dashboards to analyze price trends.
 
 📂 Repository Structure
-├── terraform/                # Terraform IaC for AWS resources
-│   ├── main.tf               # AWS infra (S3, Lambda, Glue, Step Functions)
-│   ├── variables.tf
-│   └── outputs.tf
-├── lambda/                   # Lambda ingestion function
-│   └── ingest_data.py
-├── glue/                     # AWS Glue scripts
-│   └── clean_data.py
-├── README.md                 # Project documentation
+
+          
 
 💡 Future Enhancements
 
@@ -104,9 +99,9 @@ Integrate Airflow on MWAA for complex orchestration
 
 Build real-time dashboards with AWS QuickSight or Kafka + Spark streaming
 
+
 🏆 Impact Statement
 
 This project demonstrates how cloud-based data engineering can drive transparency, accessibility, and decision-making in emerging economies.
 By enabling citizens, policymakers, and businesses to analyze prices at scale, it supports economic planning, inflation tracking, and market research in Nigeria.
 
-Would you like me to also create a shorter “executive summary” version of this README for LinkedIn/portfolio highlights (less technical, more impact-focused)?
