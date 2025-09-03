@@ -7,11 +7,13 @@ import pandas as pd
 from dateutil.relativedelta import relativedelta
 import re
 import os
+import boto3
+from io import BytesIO
 
 # tell interpreter where to look
 # sys.path.insert(0, "..")
 # from DataScraping.crawler import Crawler
-
+BUCKET_NAME = "nigeria-food-prices-bucket110112211" 
 
 class CleanData:
     def assign_regions_and_dates(self,df):
@@ -554,6 +556,194 @@ class CleanData:
 
 
 
+# 
+import tempfile
+from io import BytesIO
+import boto3
+import pandas as pd
+import boto3
+import pandas as pd
+import tempfile
+import os
+from io import BytesIO
 
+import boto3
+import pandas as pd
+from io import BytesIO
+import tempfile
+import os
+import time
 
+# def process_bronze_s3_to_silver(s3_bucket: str, bronze_prefix: str, silver_prefix: str, aws_region="eu-west-1"):
+#     """
+#     Processes Excel files in a bronze S3 folder, cleans them, and uploads as Parquet to a silver S3 folder.
+#     Fully Windows-compatible.
+#     """
+#     s3_client = boto3.client("s3", region_name=aws_region)
+#     clean_data = CleanData()
 
+#     # List Excel files in bronze folder
+#     response = s3_client.list_objects_v2(Bucket=s3_bucket, Prefix=bronze_prefix)
+#     if "Contents" not in response:
+#         print("No files found in bronze folder.")
+#         return
+
+#     for obj in response["Contents"]:
+#         key = obj["Key"]
+#         if not key.endswith(".xlsx") or key.split("/")[-1].startswith("~$"):
+#             continue  # skip non-Excel or temporary files
+
+#         try:
+#             # Download file from S3
+#             s3_obj = s3_client.get_object(Bucket=s3_bucket, Key=key)
+#             file_content = s3_obj["Body"].read()
+
+#             tmp_dir = tempfile.gettempdir()
+#             tmp_path = os.path.join(tmp_dir, os.path.basename(key))
+
+#             with open(tmp_path, "wb") as f:
+#                 f.write(file_content) # crucial on Windows
+
+#                 # Extract date from filename
+#                 date_ = clean_data.extract_date_from_filename(key)
+#                 date_ = pd.to_datetime(date_, dayfirst=True)
+
+#                 # Apply cleaning logic
+#                 if pd.Timestamp("2017-01-01") <= date_ <= pd.Timestamp("2022-12-31"):
+#                     print(f"Skipping {key} (in 2017-2022 range)")
+#                     continue
+#                 elif date_.year == 2016:
+#                     df = clean_data.clean_2016_data(tmp_path)
+#                 elif date_.year == 2023 and date_.month == 1:
+#                     df = clean_data.clean_01_2017_01_2023(tmp_path)
+#                 elif date_.year == 2023 and date_.month in [2,3,4,5,7,8]:
+#                     df = clean_data.clean_02_2023_08_2023(tmp_path)
+#                 elif date_.year == 2023 and date_.month == 6:
+#                     df = clean_data.clean_june_2023(tmp_path)
+#                 else:
+#                     df = clean_data.clean_incremental(tmp_path)
+
+#                 # Ensure date column is proper
+#                 if 'date' in df.columns:
+#                     df['date'] = pd.to_datetime(df['date'], errors='coerce', dayfirst=True).astype(str)
+
+#                 print(f"Processed {key}, columns: {df.columns.tolist()}")
+
+#                 # Convert DataFrame to Parquet in memory
+#                 buffer = BytesIO()
+#                 df.to_parquet(buffer, index=False)
+#                 buffer.seek(0)
+#                 # Partitioned S3 path
+#                 year = date_.year
+#                 month = f"{date_.month:02d}"
+#                 filename = key.split("/")[-1].replace(".xlsx", ".parquet")
+#                 s3_key = f"{silver_prefix}/year={year}/month={month}/{filename}"
+
+#                 # S3 key for Silver output
+#                 # filename = key.split("/")[-1].replace(".xlsx", ".parquet")
+#                 # s3_key = f"{silver_prefix}/{filename}"
+
+#                 # Upload to S3
+#                 s3_client.put_object(Bucket=s3_bucket, Key=s3_key, Body=buffer.getvalue())
+#                 print(f"Uploaded to s3://{s3_bucket}/{s3_key}")
+
+#             finally:
+#                 # Delete temp file safely
+#                 if os.path.exists(tmp_path):
+#                     os.remove(tmp_path)
+
+#         except Exception as e:
+#             print(f"Error processing {key}: {e}")
+import gc
+def process_bronze_s3_to_silver(s3_bucket: str, bronze_prefix: str, silver_prefix: str, aws_region="eu-west-1"):
+    """
+    Processes Excel files in a bronze S3 folder, cleans them, and uploads as Parquet to a silver S3 folder.
+    Windows-safe: avoids NamedTemporaryFile lock issues.
+    """
+    s3_client = boto3.client("s3", region_name=aws_region)
+    clean_data = CleanData()
+
+    # List Excel files in bronze folder
+    response = s3_client.list_objects_v2(Bucket=s3_bucket, Prefix=bronze_prefix)
+    if "Contents" not in response:
+        print("No files found in bronze folder.")
+        return
+
+    for obj in response["Contents"]:
+        key = obj["Key"]
+        if not key.endswith(".xlsx") or key.split("/")[-1].startswith("~$"):
+            continue  # skip non-Excel or temporary files
+
+        tmp_path = None
+        try:
+            # Download file from S3
+            s3_obj = s3_client.get_object(Bucket=s3_bucket, Key=key)
+            file_content = s3_obj["Body"].read()
+
+            # Write to a temp path (Windows safe)
+            tmp_dir = tempfile.gettempdir()
+            tmp_path = os.path.join(tmp_dir, os.path.basename(key))
+            with open(tmp_path, "wb") as f:
+                f.write(file_content)
+
+            # Extract date from filename
+            date_ = clean_data.extract_date_from_filename(key)
+            date_ = pd.to_datetime(date_, dayfirst=True)
+
+            # Apply cleaning logic
+            if pd.Timestamp("2017-01-01") <= date_ <= pd.Timestamp("2022-12-31"):
+                print(f"Skipping {key} (in 2017-2022 range)")
+                continue
+            elif date_.year == 2016:
+                df = clean_data.clean_2016_data(tmp_path)
+            elif date_.year == 2023 and date_.month == 1:
+                df = clean_data.clean_01_2017_01_2023(tmp_path)
+            elif date_.year == 2023 and date_.month in [2, 3, 4, 5, 7, 8]:
+                df = clean_data.clean_02_2023_08_2023(tmp_path)
+            elif date_.year == 2023 and date_.month == 6:
+                df = clean_data.clean_june_2023(tmp_path)
+            else:
+                df = clean_data.clean_incremental(tmp_path)
+
+            # Ensure date column is proper
+            if "date" in df.columns:
+                df["date"] = pd.to_datetime(df["date"], errors="coerce", dayfirst=True).astype(str)
+
+            print(f"Processed {key}, columns: {df.columns.tolist()}")
+
+            # Convert DataFrame to Parquet in memory
+            buffer = BytesIO()
+            df.to_parquet(buffer, index=False)
+            buffer.seek(0)
+
+            # Partitioned S3 path
+            year = date_.year
+            month = f"{date_.month:02d}"
+            filename = key.split("/")[-1].replace(".xlsx", ".parquet")
+            s3_key = f"{silver_prefix}/year={year}/month={month}/{filename}"
+
+            # Upload to S3
+            s3_client.put_object(Bucket=s3_bucket, Key=s3_key, Body=buffer.getvalue())
+            print(f"Uploaded to s3://{s3_bucket}/{s3_key}")
+
+        except Exception as e:
+            print(f"Error processing {key}: {e}")
+        finally:
+            # Clean up the temp file
+           if tmp_path and os.path.exists(tmp_path):
+                for attempt in range(3):
+                    try:
+                        os.remove(tmp_path)
+                        break
+                    except PermissionError:
+                        gc.collect()   # force release of open handles
+                        time.sleep(1)  # wait before retry
+                        if attempt == 2:  # last attempt
+                            print(f"Warning: could not delete temp file {tmp_path}")
+# Example usage
+BUCKET_NAME = "nigeria-food-prices-bucket110112211"
+process_bronze_s3_to_silver(
+    s3_bucket=BUCKET_NAME,
+    bronze_prefix="bronze",
+    silver_prefix="silver"
+)

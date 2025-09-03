@@ -1,5 +1,12 @@
 provider "aws" {
-  region = "us-east-1" # change to your AWS region
+  region = "eu-west-1"
+}
+
+# Upload clean_data.py script to S3
+resource "aws_s3_object" "clean_data_script" {
+  bucket = "nigeria-food-prices-bucket110112211"
+  key    = "scripts/clean_data.py"
+  source = "../../scripts/clean_data.py"  # path from glue.tf to your local file
 }
 
 # IAM Role for Glue Job
@@ -11,16 +18,14 @@ resource "aws_iam_role" "glue_role" {
     Statement = [
       {
         Effect = "Allow"
-        Principal = {
-          Service = "glue.amazonaws.com"
-        }
+        Principal = { Service = "glue.amazonaws.com" }
         Action = "sts:AssumeRole"
       }
     ]
   })
 }
 
-# Attach necessary policies
+# Attach Glue and S3 policies
 resource "aws_iam_role_policy_attachment" "glue_service_policy" {
   role       = aws_iam_role.glue_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"
@@ -33,24 +38,26 @@ resource "aws_iam_role_policy_attachment" "glue_s3_access" {
 
 # Glue Job
 resource "aws_glue_job" "clean_data" {
+  depends_on = [aws_s3_object.clean_data_script]
+
   name     = "clean_data_job"
   role_arn = aws_iam_role.glue_role.arn
 
   command {
     name            = "glueetl"
     python_version  = "3"
-    script_location = "s3://nigeria-food-prices-bucket110112211/scripts/clean_data.py"
+    script_location = "s3://${aws_s3_object.clean_data_script.bucket}/${aws_s3_object.clean_data_script.key}"
   }
 
   default_arguments = {
-    "--TempDir"             = "s3://nigeria-food-prices-bucket110112211/tmp/"
-    "--job-language"        = "python"
+    "--TempDir"                          = "s3://nigeria-food-prices-bucket110112211/tmp/"
+    "--job-language"                     = "python"
     "--enable-continuous-cloudwatch-log" = "true"
-    "--enable-metrics"      = ""
+    "--enable-metrics"                   = ""
   }
 
-  max_retries  = 0
-  glue_version = "3.0"
+  max_retries       = 0
+  glue_version      = "3.0"
   number_of_workers = 2
   worker_type       = "Standard"
 }
