@@ -1,35 +1,57 @@
-import sys
-from datetime import date, datetime
-
-# import click
-import numpy as np
 import pandas as pd
 from dateutil.relativedelta import relativedelta
 import re
 import os
 import boto3
 from io import BytesIO
+import time
+import tempfile
+import gc
 
-# tell interpreter where to look
-# sys.path.insert(0, "..")
-# from DataScraping.crawler import Crawler
-BUCKET_NAME = "nigeria-food-prices-bucket110112211" 
+BUCKET_NAME = "nigeria-food-prices-bucket110112211"
+
 
 class CleanData:
-    def assign_regions_and_dates(self,df):
+    def assign_regions_and_dates(self, df):
         # Define regions using a dictionary
         region_map = {
-            "North_Central": ["Benue", "ABUJA", "Kogi", "Kwara", "NASARAWA", "Niger", "Plateau"],
+            "North_Central": [
+                "Benue",
+                "ABUJA",
+                "Kogi",
+                "Kwara",
+                "NASARAWA",
+                "Niger",
+                "Plateau",
+            ],
             "North_East": ["Adamawa", "Bauchi", "Borno", "Gombe", "Taraba", "Yobe"],
-            "North_West": ["Kaduna", "Katsina", "Kano", "Kebbi", "Sokoto", "Jigawa", "Zamfara"],
+            "North_West": [
+                "Kaduna",
+                "Katsina",
+                "Kano",
+                "Kebbi",
+                "Sokoto",
+                "Jigawa",
+                "Zamfara",
+            ],
             "South_East": ["Abia", "Anambra", "Ebonyi", "Enugu", "Imo"],
-            "South_South": ["Akwa Ibom", "Bayelsa", "Cross River", "Delta", "Edo", "Rivers"],
+            "South_South": [
+                "Akwa Ibom",
+                "Bayelsa",
+                "Cross River",
+                "Delta",
+                "Edo",
+                "Rivers",
+            ],
             "South_West": ["Ekiti", "Lagos", "Osun", "Ondo", "Ogun", "Oyo"],
-            "NATIONAL": ["NATIONAL"]
+            "NATIONAL": ["NATIONAL"],
         }
 
         # Convert all states in the map to uppercase
-        region_map = {region: [state.upper() for state in states] for region, states in region_map.items()}
+        region_map = {
+            region: [state.upper() for state in states]
+            for region, states in region_map.items()
+        }
 
         # Uppercase state names in the DataFrame for consistent matching
         # df = df.copy()
@@ -37,9 +59,7 @@ class CleanData:
 
         # Map state to region
         state_to_region = {
-            state: region
-            for region, states in region_map.items()
-            for state in states
+            state: region for region, states in region_map.items() for state in states
         }
 
         # Add region
@@ -47,67 +67,89 @@ class CleanData:
 
         # Convert 'Date' column to datetime if not already
         if not pd.api.types.is_datetime64_any_dtype(df["Date"]):
-            df["Date"] = pd.to_datetime(df["Date"], errors='coerce')
+            df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
 
         return df
 
-    def extract_date_from_filename(self,data_link):
+    def extract_date_from_filename(self, data_link):
         filename = os.path.basename(data_link)
 
         # Map short & full month names to month numbers
         month_map = {
-            'jan': '01', 'january': '01',
-            'feb': '02', 'february': '02',
-            'mar': '03', 'march': '03',
-            'apr': '04', 'april': '04',
-            'may': '05',
-            'jun': '06', 'june': '06',
-            'jul': '07', 'july': '07',
-            'aug': '08', 'august': '08',
-            'sep': '09', 'sept': '09', 'september': '09',
-            'oct': '10', 'october': '10',
-            'nov': '11', 'november': '11',
-            'dec': '12', 'december': '12',
-            'decemeber': '12'  # handle typo
+            "jan": "01",
+            "january": "01",
+            "feb": "02",
+            "february": "02",
+            "mar": "03",
+            "march": "03",
+            "apr": "04",
+            "april": "04",
+            "may": "05",
+            "jun": "06",
+            "june": "06",
+            "jul": "07",
+            "july": "07",
+            "aug": "08",
+            "august": "08",
+            "sep": "09",
+            "sept": "09",
+            "september": "09",
+            "oct": "10",
+            "october": "10",
+            "nov": "11",
+            "november": "11",
+            "dec": "12",
+            "december": "12",
+            "decemeber": "12",  # handle typo
         }
 
         # Normalize filename
-        normalized = filename.lower().replace('%20', ' ').replace('_', ' ').replace('-', ' ')
+        normalized = (
+            filename.lower().replace("%20", " ").replace("_", " ").replace("-", " ")
+        )
 
         # Try: Full month + year (e.g. "march 2023")
-        match1 = re.search(r'\b(' + '|'.join(month_map.keys()) + r')\s+(\d{2,4})\b', normalized)
+        match1 = re.search(
+            r"\b(" + "|".join(month_map.keys()) + r")\s+(\d{2,4})\b", normalized
+        )
         if match1:
             month_str = match1.group(1)
             year_str = match1.group(2)
             if len(year_str) == 2:
-                year_str = '20' + year_str  # assume 21st century
+                year_str = "20" + year_str  # assume 21st century
             month_num = month_map.get(month_str[:3])
             return f"01/{month_num}/{year_str}"
 
         # Try: Compact format e.g. "jan25", "apr25"
-        match2 = re.search(r'\b(' + '|'.join(month_map.keys()) + r')(\d{2})\b', normalized)
+        match2 = re.search(
+            r"\b(" + "|".join(month_map.keys()) + r")(\d{2})\b", normalized
+        )
         if match2:
             month_str = match2.group(1)
             year_str = match2.group(2)
-            year_str = '20' + year_str  # assume 21st century
+            year_str = "20" + year_str  # assume 21st century
             month_num = month_map.get(month_str[:3])
             return f"01/{month_num}/{year_str}"
 
         return None  # Could not extract
 
-    def clean_2016_data(self,data_link):
+    def clean_2016_data(self, data_link):
         data = pd.ExcelFile(data_link)
         states = data.sheet_names[1:]
         df_list = []
         for state in states:
             df = data.parse(state, skiprows=2)
-            cols_to_drop = ['Unit of Measurement', " (Feb 2016 & Feb 2017)",  "(Jan 2017 & Feb 2017)"]
+            cols_to_drop = [
+                "Unit of Measurement",
+                " (Feb 2016 & Feb 2017)",
+                "(Jan 2017 & Feb 2017)",
+            ]
             df.drop(cols_to_drop, axis=1, inplace=True)
             df = df.transpose()
             df.columns = df.iloc[0]
             df = df.iloc[1:, :].reset_index()
-            df["State"]= state.replace('_', ' ').upper()
-            df.rename(columns={'index': 'Date'}, inplace=True)
+            df["State"] = state.replace("_", " ").upper()
+            df.rename(columns={"index": "Date"}, inplace=True)
             df_list.append(df)
         combined_df = pd.concat(df_list, axis=0)
         columns_to_convert = combined_df.columns[1:-1]
@@ -118,7 +160,7 @@ class CleanData:
         combined_df = self.standardize_columns(combined_df)
         return combined_df
 
-    def clean_01_2017_01_2023(self,data_link):
+    def clean_01_2017_01_2023(self, data_link):
         data = pd.ExcelFile(data_link)
 
         all_states_df_list = []
@@ -138,277 +180,183 @@ class CleanData:
         all_states_df = self.assign_regions_and_dates(all_states_df)
         all_states_df = self.standardize_columns(all_states_df)
         return all_states_df
-    def clean_02_2023_08_2023(self,data_link):
+
+    def clean_02_2023_08_2023(self, data_link):
         data = pd.ExcelFile(data_link)
         data.sheet_names
-        sheet_lookup = [s for s in data.sheet_names if s.lower() in {"states", "state", "state & zone", "states & zones"}]
+        sheet_lookup = [
+            s
+            for s in data.sheet_names
+            if s.lower() in {"states", "state", "state & zone", "states & zones"}
+        ]
         if sheet_lookup:
             df = data.parse(sheet_lookup[0], skiprows=1)
         else:
-            raise ValueError("No sheet named 'STATE' or 'STATES' found (case-insensitive).")
+            raise ValueError(
+                "No sheet named 'STATE' or 'STATES' found (case-insensitive)."
+            )
         df = df.loc[:, ~df.columns.str.upper().str.startswith("AV")]
         df = df.transpose().reset_index()
-        df.columns = df.iloc[0,:]
-        df.rename(columns={'ITEMS': 'State','items': 'State' }, inplace=True)
-        df= df.iloc[1:, :]
+        df.columns = df.iloc[0, :]
+        df.rename(columns={"ITEMS": "State", "items": "State"}, inplace=True)
+        df = df.iloc[1:, :]
         df = self.fix_unnamed_values(df)
         df = self.fix_typos(df)
-        df['Date'] = self.extract_date_from_filename(data_link)
+        df["Date"] = self.extract_date_from_filename(data_link)
         try:
-          df = self.assign_regions_and_dates(df)
+            df = self.assign_regions_and_dates(df)
         except:
-          pass
+            pass
         df = self.standardize_columns(df)
         return df
-    def clean_june_2023(self,data_link):
+
+    def clean_june_2023(self, data_link):
         data = pd.ExcelFile(data_link)
         data.sheet_names
-        df = data.parse('SELECTED FOOD JUNE 2023', skiprows=1)
+        df = data.parse("SELECTED FOOD JUNE 2023", skiprows=1)
         df = df.iloc[:, -7:]
         df = df.transpose().reset_index()
-        df.columns = df.iloc[0,:]
-        df.rename(columns={'Items.1': 'Region'}, inplace=True)
-        df= df.iloc[1:, :]
+        df.columns = df.iloc[0, :]
+        df.rename(columns={"Items.1": "Region"}, inplace=True)
+        df = df.iloc[1:, :]
         df = self.fix_unnamed_values(df)
         df = self.fix_typos(df)
-        df['Date'] = self.extract_date_from_filename(data_link)
+        df["Date"] = self.extract_date_from_filename(data_link)
         df = self.standardize_columns(df)
         return df
-    def clean_incremental(self,data_link):
+
+    def clean_incremental(self, data_link):
         data = pd.ExcelFile(data_link)
         data.sheet_names
         # df = data.parse("ZONE ALL ITEM")
-        df = data.parse(next(s for s in data.sheet_names if s.lower() == "zone all item"))
+        df = data.parse(
+            next(s for s in data.sheet_names if s.lower() == "zone all item")
+        )
 
         df = df.transpose().reset_index()
-        df.columns = df.iloc[0,:]
+        df.columns = df.iloc[0, :]
         # df.rename(columns={'ITEM LABEL': 'Region'}, inplace=True)
         # df.rename(columns={col: "Region" for col in df.columns if col.strip().lower() == "item label"}, inplace=True)
         df.rename(
-        columns={
+            columns={
                 col: "Region"
                 for col in df.columns
                 if col.strip().lower() in {"row labels", "item labels", "item label"}
             },
-            inplace=True
+            inplace=True,
         )
 
-        df= df.iloc[1:, :]
+        df = df.iloc[1:, :]
         df = self.fix_unnamed_values(df)
         df = self.fix_typos(df)
-        df['Date'] = self.extract_date_from_filename(data_link)
+        df["Date"] = self.extract_date_from_filename(data_link)
         df = self.standardize_columns(df)
         return df
-    def clean_column(self,col):
+
+    def clean_column(self, col):
         col = col.lower()
         col = re.sub(r"[^\w\s]", "", col)  # Remove punctuation
         col = re.sub(r"\s+", " ", col).strip()  # Normalize whitespace
         return col
 
-    def standardize_columns(self,df: pd.DataFrame) -> pd.DataFrame:
+    def standardize_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         # 1. Normalize all column names
-        column_map =  {
-    "agric_eggs": [
-        "Agric eggs medium size",
-        # "Agric eggs(medium size price of one)",
-        # "Agric hen eggs, ",
-        "Agric hen eggs, (a Crate of 30 pieces)",
-    ],
-    "agric eggs(medium size price of one)": [
-        "Agric eggs(medium size price of one)",
-        "Agric hen eggs, "
-
-    ],
-    "beans_brown": [
-        "Beans Brown",
-        "Beans brown,sold loose"
-
-    ],
-    # "beans_brown": [
-    #     "Beans Brown",
-    #     "Beans brown,sold loose"
-    # ],
-    # "beans_white": [
-    #     "Beans white"
-    # ],
-    "beans_blackeye": [
-        "Beans:white black eye. sold loose",
-        "Beans white"
-    ],
-    "beef_bone_in": [
-        "Beef Bone in"
-    ],
-    "beef_boneless": [
-        "Beef Boneless",
-        "Beef,boneless"
-    ],
-    "bread_sliced": [
-        "Bread (sliced), 450g",
-        "Bread sliced 500g"
-    ],
-    "bread_unsliced": [
-        "Bread (unsliced), 450g",
-        "Bread unsliced 500g"
-    ],
-    "rice_ofada": [
-        "Broken Rice (Ofada)"
-    ],
-    "carrots_fresh": [
-        "Carrots, fresh"
-    ],
-    "catfish_fresh": [
-        "Cat fresh fish",
-        "Catfish (obokun) fresh"
-    ],
-    "catfish_dried": [
-        "Catfish :dried"
-    ],
-    "catfish_smoked": [
-        "Catfish Smoked"
-    ],
-    "chicken_feet": [
-        "Chicken Feet",
-        "Chicken feet"
-    ],
-    "chicken_wings": [
-        "Chicken Wings"
-    ],
-    "chicken_frozen": [
-        "Chicken meat (Frozen)",
-        "Frozen chicken"
-    ],
-    "crayfish_small_white": [
-        "Cray fish small white"
-    ],
-    "dried_fish": [
-        "Dried Fish Sardine",
-        "Dried fish, Bonga"
-    ],
-    "milk_evap_peak": [
-        "Evaporated tinned milk(peak), 170g",
-        "Tin Milk-Evaporated, Peak Milk, 150g"
-    ],
-    "milk_evap_other": [
-        "Evaporated tinned milk carnation 170g",
-        "Tin Milk-Evaporated, Three Crown Milk, 160g"
-    ],
-    "gari_white": [
-        "Gari white,sold loose",
-        "Garri white"
-    ],
-    "gari_yellow": [
-        "Gari yellow,sold loose",
-        "Garri Yellow"
-    ],
-    "ginger_fresh": [
-        "Ginger, fresh"
-    ],
-    "goat_meat_bone_in": [
-        "Goat Meat Bone in"
-    ],
-    "groundnut_oil": [
-        "Groundnut oil, 75cl",
-        "Groundnut oil: 1 bottle, specify bottle"
-    ],
-    "groundnuts_roasted": [
-        "Groundnuts, roasted,75cl bottle"
-    ],
-    "irish_potato": [
-        "Irish Potatoe",
-        "Irish potato"
-    ],
-    "local_rice": [
-        "Local Rice (Broken)",
-        "Rice local sold loose",
-        "Rice Local, short-Grained"
-    ],
-    "mackerel_frozen": [
-        "Mackerel : frozen",
-        "Mackerel, Frozen"
-    ],
-    "maize_grain_white": [
-        "Maize (Corn) Grains (White) sold loose",
-        "Maize grain white sold loose"
-    ],
-    "maize_grain_yellow": [
-        "Maize grain yellow sold loose"
-    ],
-    "mudfish_fresh": [
-        "Mudfish (aro) fresh"
-    ],
-    "mudfish_dried": [
-        "Mudfish : dried"
-    ],
-    "onion": [
-        "Onion bulb",
-        "Onions, fresh "
-    ],
-    "palm_oil": [
-        "Palm oil, 75cl",
-        "Palm oil: 1 bottle,specify bottle"
-    ],
-    "plantain_ripe": [
-        "Plantain (ripe)",
-        "Plantain(ripe)"
-    ],
-    "plantain_unripe": [
-        "Plantain (unripe)",
-        "Plantain(unripe)"
-    ],
-    "rice_imported_long": [
-        "Rice Long-Grained (Imported)",
-        "Rice,imported high quality sold loose"
-    ],
-    "rice_medium": [
-        "Rice Medium Grained"
-    ],
-    "rice_agric": [
-        "Rice agric sold loose"
-    ],
-    "semovita_1kg": [
-        "Semovita, Prepacked (1kg)"
-    ],
-    "smoked_fish": [
-        "Smoked fish"
-    ],
-    "sweet_potato": [
-        "Sweet potato",
-        "Sweet potatoes "
-    ],
-    "tilapia_fresh": [
-        "Tilapia fish (epiya) fresh",
-        "Tilapia fresh fish (Epiya)"
-    ],
-    "titus_fish": [
-        "Titus, frozen",
-        "Titus:frozen"
-    ],
-    "tomato_fresh": [
-        "Tomato",
-        "Tomatoes, fresh ",
-        "tomato"
-    ],
-    "veg_oil": [
-        "Vegetable Oil, 75cl",
-        "Vegetable oil:1 bottle,specify bottle"
-    ],
-    "watermelon": [
-        "Watermelon whole, medium size fresh"
-    ],
-    "wheat_flour": [
-        "Wheat Flour, Prepacked (2kg)",
-        "Wheat flour: prepacked (golden penny 2kg)"
-    ],
-    "yam_tuber": [
-        "Yam Tuber",
-        "Yam tuber"
-    ],
-    # "Region": ["Region", "Row Labels"],
-    # "state": ["State"],
-    # "date": ["Date"],
-    # "item_label": ["Item Label"]
-
-}
+        column_map = {
+            "agric_eggs": [
+                "Agric eggs medium size",
+                # "Agric eggs(medium size price of one)",
+                # "Agric hen eggs, ",
+                "Agric hen eggs, (a Crate of 30 pieces)",
+            ],
+            "agric eggs(medium size price of one)": [
+                "Agric eggs(medium size price of one)",
+                "Agric hen eggs, ",
+            ],
+            "beans_brown": ["Beans Brown", "Beans brown,sold loose"],
+            # "beans_brown": [
+            #     "Beans Brown",
+            #     "Beans brown,sold loose"
+            # ],
+            # "beans_white": [
+            #     "Beans white"
+            # ],
+            "beans_blackeye": ["Beans:white black eye. sold loose", "Beans white"],
+            "beef_bone_in": ["Beef Bone in"],
+            "beef_boneless": ["Beef Boneless", "Beef,boneless"],
+            "bread_sliced": ["Bread (sliced), 450g", "Bread sliced 500g"],
+            "bread_unsliced": ["Bread (unsliced), 450g", "Bread unsliced 500g"],
+            "rice_ofada": ["Broken Rice (Ofada)"],
+            "carrots_fresh": ["Carrots, fresh"],
+            "catfish_fresh": ["Cat fresh fish", "Catfish (obokun) fresh"],
+            "catfish_dried": ["Catfish :dried"],
+            "catfish_smoked": ["Catfish Smoked"],
+            "chicken_feet": ["Chicken Feet", "Chicken feet"],
+            "chicken_wings": ["Chicken Wings"],
+            "chicken_frozen": ["Chicken meat (Frozen)", "Frozen chicken"],
+            "crayfish_small_white": ["Cray fish small white"],
+            "dried_fish": ["Dried Fish Sardine", "Dried fish, Bonga"],
+            "milk_evap_peak": [
+                "Evaporated tinned milk(peak), 170g",
+                "Tin Milk-Evaporated, Peak Milk, 150g",
+            ],
+            "milk_evap_other": [
+                "Evaporated tinned milk carnation 170g",
+                "Tin Milk-Evaporated, Three Crown Milk, 160g",
+            ],
+            "gari_white": ["Gari white,sold loose", "Garri white"],
+            "gari_yellow": ["Gari yellow,sold loose", "Garri Yellow"],
+            "ginger_fresh": ["Ginger, fresh"],
+            "goat_meat_bone_in": ["Goat Meat Bone in"],
+            "groundnut_oil": [
+                "Groundnut oil, 75cl",
+                "Groundnut oil: 1 bottle, specify bottle",
+            ],
+            "groundnuts_roasted": ["Groundnuts, roasted,75cl bottle"],
+            "irish_potato": ["Irish Potatoe", "Irish potato"],
+            "local_rice": [
+                "Local Rice (Broken)",
+                "Rice local sold loose",
+                "Rice Local, short-Grained",
+            ],
+            "mackerel_frozen": ["Mackerel : frozen", "Mackerel, Frozen"],
+            "maize_grain_white": [
+                "Maize (Corn) Grains (White) sold loose",
+                "Maize grain white sold loose",
+            ],
+            "maize_grain_yellow": ["Maize grain yellow sold loose"],
+            "mudfish_fresh": ["Mudfish (aro) fresh"],
+            "mudfish_dried": ["Mudfish : dried"],
+            "onion": ["Onion bulb", "Onions, fresh "],
+            "palm_oil": ["Palm oil, 75cl", "Palm oil: 1 bottle,specify bottle"],
+            "plantain_ripe": ["Plantain (ripe)", "Plantain(ripe)"],
+            "plantain_unripe": ["Plantain (unripe)", "Plantain(unripe)"],
+            "rice_imported_long": [
+                "Rice Long-Grained (Imported)",
+                "Rice,imported high quality sold loose",
+            ],
+            "rice_medium": ["Rice Medium Grained"],
+            "rice_agric": ["Rice agric sold loose"],
+            "semovita_1kg": ["Semovita, Prepacked (1kg)"],
+            "smoked_fish": ["Smoked fish"],
+            "sweet_potato": ["Sweet potato", "Sweet potatoes "],
+            "tilapia_fresh": [
+                "Tilapia fish (epiya) fresh",
+                "Tilapia fresh fish (Epiya)",
+            ],
+            "titus_fish": ["Titus, frozen", "Titus:frozen"],
+            "tomato_fresh": ["Tomato", "Tomatoes, fresh ", "tomato"],
+            "veg_oil": ["Vegetable Oil, 75cl", "Vegetable oil:1 bottle,specify bottle"],
+            "watermelon": ["Watermelon whole, medium size fresh"],
+            "wheat_flour": [
+                "Wheat Flour, Prepacked (2kg)",
+                "Wheat flour: prepacked (golden penny 2kg)",
+            ],
+            "yam_tuber": ["Yam Tuber", "Yam tuber"],
+            # "Region": ["Region", "Row Labels"],
+            # "state": ["State"],
+            # "date": ["Date"],
+            # "item_label": ["Item Label"]
+        }
         original_to_cleaned = {col: self.clean_column(col) for col in df.columns}
         df = df.rename(columns=original_to_cleaned)
 
@@ -418,13 +366,22 @@ class CleanData:
         # 3. Consolidate columns using the mapping
         for new_col, variants in column_map.items():
             variants = [self.clean_column(c) for c in variants]
-            existing_variants = [self.clean_column(c) for c in variants if self.clean_column(c) in cleaned_columns]
+            existing_variants = [
+                self.clean_column(c)
+                for c in variants
+                if self.clean_column(c) in cleaned_columns
+            ]
 
             if not existing_variants:
                 continue  # Skip if none of the variants are present
 
             # Use first non-null value across the variants
-            df[new_col] = df[existing_variants].apply(pd.to_numeric, errors='coerce').bfill(axis=1).iloc[:, 0]
+            df[new_col] = (
+                df[existing_variants]
+                .apply(pd.to_numeric, errors="coerce")
+                .bfill(axis=1)
+                .iloc[:, 0]
+            )
 
             # Drop old variants
             cols_to_drop = [col for col in existing_variants if col != new_col]
@@ -554,108 +511,9 @@ class CleanData:
         return df
 
 
-
-
-# 
-import tempfile
-from io import BytesIO
-import boto3
-import pandas as pd
-import boto3
-import pandas as pd
-import tempfile
-import os
-from io import BytesIO
-
-import boto3
-import pandas as pd
-from io import BytesIO
-import tempfile
-import os
-import time
-
-# def process_bronze_s3_to_silver(s3_bucket: str, bronze_prefix: str, silver_prefix: str, aws_region="eu-west-1"):
-#     """
-#     Processes Excel files in a bronze S3 folder, cleans them, and uploads as Parquet to a silver S3 folder.
-#     Fully Windows-compatible.
-#     """
-#     s3_client = boto3.client("s3", region_name=aws_region)
-#     clean_data = CleanData()
-
-#     # List Excel files in bronze folder
-#     response = s3_client.list_objects_v2(Bucket=s3_bucket, Prefix=bronze_prefix)
-#     if "Contents" not in response:
-#         print("No files found in bronze folder.")
-#         return
-
-#     for obj in response["Contents"]:
-#         key = obj["Key"]
-#         if not key.endswith(".xlsx") or key.split("/")[-1].startswith("~$"):
-#             continue  # skip non-Excel or temporary files
-
-#         try:
-#             # Download file from S3
-#             s3_obj = s3_client.get_object(Bucket=s3_bucket, Key=key)
-#             file_content = s3_obj["Body"].read()
-
-#             tmp_dir = tempfile.gettempdir()
-#             tmp_path = os.path.join(tmp_dir, os.path.basename(key))
-
-#             with open(tmp_path, "wb") as f:
-#                 f.write(file_content) # crucial on Windows
-
-#                 # Extract date from filename
-#                 date_ = clean_data.extract_date_from_filename(key)
-#                 date_ = pd.to_datetime(date_, dayfirst=True)
-
-#                 # Apply cleaning logic
-#                 if pd.Timestamp("2017-01-01") <= date_ <= pd.Timestamp("2022-12-31"):
-#                     print(f"Skipping {key} (in 2017-2022 range)")
-#                     continue
-#                 elif date_.year == 2016:
-#                     df = clean_data.clean_2016_data(tmp_path)
-#                 elif date_.year == 2023 and date_.month == 1:
-#                     df = clean_data.clean_01_2017_01_2023(tmp_path)
-#                 elif date_.year == 2023 and date_.month in [2,3,4,5,7,8]:
-#                     df = clean_data.clean_02_2023_08_2023(tmp_path)
-#                 elif date_.year == 2023 and date_.month == 6:
-#                     df = clean_data.clean_june_2023(tmp_path)
-#                 else:
-#                     df = clean_data.clean_incremental(tmp_path)
-
-#                 # Ensure date column is proper
-#                 if 'date' in df.columns:
-#                     df['date'] = pd.to_datetime(df['date'], errors='coerce', dayfirst=True).astype(str)
-
-#                 print(f"Processed {key}, columns: {df.columns.tolist()}")
-
-#                 # Convert DataFrame to Parquet in memory
-#                 buffer = BytesIO()
-#                 df.to_parquet(buffer, index=False)
-#                 buffer.seek(0)
-#                 # Partitioned S3 path
-#                 year = date_.year
-#                 month = f"{date_.month:02d}"
-#                 filename = key.split("/")[-1].replace(".xlsx", ".parquet")
-#                 s3_key = f"{silver_prefix}/year={year}/month={month}/{filename}"
-
-#                 # S3 key for Silver output
-#                 # filename = key.split("/")[-1].replace(".xlsx", ".parquet")
-#                 # s3_key = f"{silver_prefix}/{filename}"
-
-#                 # Upload to S3
-#                 s3_client.put_object(Bucket=s3_bucket, Key=s3_key, Body=buffer.getvalue())
-#                 print(f"Uploaded to s3://{s3_bucket}/{s3_key}")
-
-#             finally:
-#                 # Delete temp file safely
-#                 if os.path.exists(tmp_path):
-#                     os.remove(tmp_path)
-
-#         except Exception as e:
-#             print(f"Error processing {key}: {e}")
-import gc
-def process_bronze_s3_to_silver(s3_bucket: str, bronze_prefix: str, silver_prefix: str, aws_region="eu-west-1"):
+def process_bronze_s3_to_silver(
+    s3_bucket: str, bronze_prefix: str, silver_prefix: str, aws_region="eu-west-1"
+):
     """
     Processes Excel files in a bronze S3 folder, cleans them, and uploads as Parquet to a silver S3 folder.
     Windows-safe: avoids NamedTemporaryFile lock issues.
@@ -707,7 +565,9 @@ def process_bronze_s3_to_silver(s3_bucket: str, bronze_prefix: str, silver_prefi
 
             # Ensure date column is proper
             if "date" in df.columns:
-                df["date"] = pd.to_datetime(df["date"], errors="coerce", dayfirst=True).astype(str)
+                df["date"] = pd.to_datetime(
+                    df["date"], errors="coerce", dayfirst=True
+                ).astype(str)
 
             print(f"Processed {key}, columns: {df.columns.tolist()}")
 
@@ -730,20 +590,18 @@ def process_bronze_s3_to_silver(s3_bucket: str, bronze_prefix: str, silver_prefi
             print(f"Error processing {key}: {e}")
         finally:
             # Clean up the temp file
-           if tmp_path and os.path.exists(tmp_path):
+            if tmp_path and os.path.exists(tmp_path):
                 for attempt in range(3):
                     try:
                         os.remove(tmp_path)
                         break
                     except PermissionError:
-                        gc.collect()   # force release of open handles
+                        gc.collect()  # force release of open handles
                         time.sleep(1)  # wait before retry
                         if attempt == 2:  # last attempt
                             print(f"Warning: could not delete temp file {tmp_path}")
-# Example usage
-BUCKET_NAME = "nigeria-food-prices-bucket110112211"
+
+
 process_bronze_s3_to_silver(
-    s3_bucket=BUCKET_NAME,
-    bronze_prefix="bronze",
-    silver_prefix="silver"
+    s3_bucket=BUCKET_NAME, bronze_prefix="bronze", silver_prefix="silver"
 )
