@@ -46,29 +46,29 @@ resource "aws_iam_role_policy" "lambda_s3" {
 # ------------------------------
 # IAM Role for Glue Job
 # ------------------------------
-resource "aws_iam_role" "glue_role" {
-  name = "glue-etl-role"
+# resource "aws_iam_role" "glue_role" {
+#   name = "glue-etl-role"
 
-  assume_role_policy = jsonencode({
-    Version   = "2012-10-17",
-    Statement = [
-      {
-        Effect    = "Allow",
-        Principal = { Service = "glue.amazonaws.com" },
-        Action    = "sts:AssumeRole"
-      }
-    ]
-  })
-}
+#   assume_role_policy = jsonencode({
+#     Version   = "2012-10-17",
+#     Statement = [
+#       {
+#         Effect    = "Allow",
+#         Principal = { Service = "glue.amazonaws.com" },
+#         Action    = "sts:AssumeRole"
+#       }
+#     ]
+#   })
+# }
 
-# Attach Glue service role policy
-resource "aws_iam_role_policy_attachment" "glue_service_policy" {
-  role       = aws_iam_role.glue_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"
-}
+# # Attach Glue service role policy
+# resource "aws_iam_role_policy_attachment" "glue_service_policy" {
+#   role       = aws_iam_role.glue_role.name
+#   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"
+# }
 
-# Attach S3 full access policy to Glue role
-resource "aws_iam_role_policy_attachment" "glue_s3_access" {
-  role       = aws_iam_role.glue_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
-}
+# # Attach S3 full access policy to Glue role
+# resource "aws_iam_role_policy_attachment" "glue_s3_access" {
+#   role       = aws_iam_role.glue_role.name
+#   policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+# }

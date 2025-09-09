@@ -10,5 +10,5 @@ output "lambda_function_name" {
 
 output "glue_job_name" {
   description = "Glue job name"
-  value       = aws_glue_job.clean_data.name
+  value       = aws_glue_job.clean_data_shell.name
 }
