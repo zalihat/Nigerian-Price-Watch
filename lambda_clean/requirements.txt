@@ -1,4 +1,0 @@
-pandas
-python-dateutil
-openpyxl
-pyarrow
