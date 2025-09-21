@@ -25,3 +25,6 @@ output "vpc_id" {
 # output "ecs_task_id" {
 #   value = aws_ecs_task.this.id
 # }
+output "ecs_log_group_name" {
+  value = aws_cloudwatch_log_group.ecs.name
+}

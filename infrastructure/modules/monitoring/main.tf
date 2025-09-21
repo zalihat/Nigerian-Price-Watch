@@ -1,3 +1,74 @@
+# resource "aws_cloudwatch_dashboard" "pipeline" {
+#   dashboard_name = var.dashboard_name
+
+#   dashboard_body = jsonencode({
+#     widgets = [
+#       # Lambda Errors
+#       {
+#         "type"  : "metric",
+#         "x"     : 0,
+#         "y"     : 0,
+#         "width" : 12,
+#         "height": 6,
+#         "properties": {
+#           "metrics": [
+#             ["AWS/Lambda", "Errors", "FunctionName", var.lambda_function_name]
+#           ],
+#           "stat": "Sum",
+#           "period": 300,
+#           "title": "Lambda Errors"
+#         }
+#       },
+#       # ECS CPU Utilization
+#         {
+#         "type": "log",
+#         "x": 12,
+#         "y": 0,
+#         "width": 12,
+#         "height": 6,
+#         "properties": {
+#             "query": "fields @timestamp, @message | sort @timestamp desc | limit 20",
+#             "region": "eu-west-1",
+#             "title": "ECS Task Logs",
+#             "logGroupNames": [var.ecs_log_group_name]
+#   }
+# }
+# ,
+#       # Step Function Failures
+#       {
+#         "type"  : "metric",
+#         "x"     : 0,
+#         "y"     : 6,
+#         "width" : 12,
+#         "height": 6,
+#         "properties": {
+#           "metrics": [
+#             ["AWS/States", "ExecutionsFailed", "StateMachineArn", var.step_function_arn]
+#           ],
+#           "stat": "Sum",
+#           "period": 300,
+#           "title": "Step Function Failures"
+#         }
+#       },
+#       # Glue Crawler Errors
+#       {
+#         "type"  : "metric",
+#         "x"     : 12,
+#         "y"     : 6,
+#         "width" : 12,
+#         "height": 6,
+#         "properties": {
+#           "metrics": [
+#             ["Glue", "CrawlerErrors", "CrawlerName", var.glue_crawler_name]
+#           ],
+#           "stat": "Sum",
+#           "period": 300,
+#           "title": "Glue Crawler Errors"
+#         }
+#       }
+#     ]
+#   })
+# }
 resource "aws_cloudwatch_dashboard" "pipeline" {
   dashboard_name = var.dashboard_name
 
@@ -12,28 +83,28 @@ resource "aws_cloudwatch_dashboard" "pipeline" {
         "height": 6,
         "properties": {
           "metrics": [
-            ["AWS/Lambda", "Errors", "FunctionName", var.lambda_function_name]
+            ["AWS/Lambda", "Errors", "FunctionName", var.lambda_function_name, { "stat": "Sum", "period": 300 }]
           ],
-          "stat": "Sum",
-          "period": 300,
-          "title": "Lambda Errors"
+          "view"   : "timeSeries",
+          "stacked": false,
+          "region" : "eu-west-1",
+          "title"  : "Lambda Errors"
         }
       },
-      # ECS CPU Utilization
-        {
-        "type": "log",
-        "x": 12,
-        "y": 0,
-        "width": 12,
+      # ECS Task Logs (Log widget)
+      {
+        "type"  : "log",
+        "x"     : 12,
+        "y"     : 0,
+        "width" : 12,
         "height": 6,
         "properties": {
-            "query": "fields @timestamp, @message | sort @timestamp desc | limit 20",
-            "region": "eu-west-1",
-            "title": "ECS Task Logs",
-            "logGroupNames": [var.ecs_log_group_name]
-  }
-}
-,
+          "query"         : "fields @timestamp, @message | sort @timestamp desc | limit 20",
+          "region"        : "eu-west-1",
+          "title"         : "ECS Task Logs",
+          "logGroupNames" : [var.ecs_log_group_name]
+        }
+      },
       # Step Function Failures
       {
         "type"  : "metric",
@@ -43,11 +114,12 @@ resource "aws_cloudwatch_dashboard" "pipeline" {
         "height": 6,
         "properties": {
           "metrics": [
-            ["AWS/States", "ExecutionsFailed", "StateMachineArn", var.step_function_arn]
+            ["AWS/States", "ExecutionsFailed", "StateMachineArn", var.step_function_arn, { "stat": "Sum", "period": 300 }]
           ],
-          "stat": "Sum",
-          "period": 300,
-          "title": "Step Function Failures"
+          "view"   : "timeSeries",
+          "stacked": false,
+          "region" : "eu-west-1",
+          "title"  : "Step Function Failures"
         }
       },
       # Glue Crawler Errors
@@ -59,11 +131,12 @@ resource "aws_cloudwatch_dashboard" "pipeline" {
         "height": 6,
         "properties": {
           "metrics": [
-            ["Glue", "CrawlerErrors", "CrawlerName", var.glue_crawler_name]
+            ["Glue", "CrawlerErrors", "CrawlerName", var.glue_crawler_name, { "stat": "Sum", "period": 300 }]
           ],
-          "stat": "Sum",
-          "period": 300,
-          "title": "Glue Crawler Errors"
+          "view"   : "timeSeries",
+          "stacked": false,
+          "region" : "eu-west-1",
+          "title"  : "Glue Crawler Errors"
         }
       }
     ]
