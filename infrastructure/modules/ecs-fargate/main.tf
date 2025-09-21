@@ -100,6 +100,30 @@ resource "aws_iam_role_policy_attachment" "ecs_task_exec_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+# -----------------------------------------
+# ECS Task Role (for container permissions)
+# -------------------------------------------
+resource "aws_iam_role" "ecs_task_role" {
+  name = "${var.service_name}-task-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = { Service = "ecs-tasks.amazonaws.com" }
+        Action   = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_task_s3_policy" {
+  role       = aws_iam_role.ecs_task_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess" # or a restrictive custom policy
+}
+
+
 # ------------------------------
 # ECS Task Definition
 # ------------------------------
@@ -110,6 +134,7 @@ resource "aws_ecs_task_definition" "this" {
   cpu                      = var.cpu
   memory                   = var.memory
   execution_role_arn       = aws_iam_role.ecs_task_exec.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn 
 
   container_definitions = jsonencode([
     {
@@ -126,24 +151,44 @@ resource "aws_ecs_task_definition" "this" {
   ])
 }
 
+
 # ------------------------------
 # ECS Service
 # ------------------------------
-resource "aws_ecs_service" "this" {
-  name            = var.service_name
-  cluster         = aws_ecs_cluster.this.id
-  task_definition = aws_ecs_task_definition.this.arn
-  desired_count   = var.desired_count
-  launch_type     = "FARGATE"
+# resource "aws_ecs_service" "this" {
+#   name            = var.service_name
+#   cluster         = aws_ecs_cluster.this.id
+#   task_definition = aws_ecs_task_definition.this.arn
+#   desired_count   = var.desired_count
+#   launch_type     = "FARGATE"
 
-  network_configuration {
-    subnets          = [aws_subnet.public_a.id, aws_subnet.public_b.id]
-    security_groups  = [aws_security_group.ecs.id]
-    assign_public_ip = true
-  }
+#   network_configuration {
+#     subnets          = [aws_subnet.public_a.id, aws_subnet.public_b.id]
+#     security_groups  = [aws_security_group.ecs.id]
+#     assign_public_ip = true
+#   }
 
-  depends_on = [
-    aws_iam_role_policy_attachment.ecs_task_exec_policy,
-    aws_route.internet
-  ]
-}
+#   depends_on = [
+#     aws_iam_role_policy_attachment.ecs_task_exec_policy,
+#     aws_route.internet
+#   ]
+# }
+
+# resource "aws_ecs_run_task" "one_off" {
+#   cluster         = aws_ecs_cluster.this.id
+#   task_definition = aws_ecs_task_definition.this.arn
+#   launch_type     = "FARGATE"
+
+#   network_configuration {
+#     subnets          = [aws_subnet.public_a.id, aws_subnet.public_b.id]
+#     security_groups  = [aws_security_group.ecs.id]
+#     assign_public_ip = true
+#   }
+#     wait_for_completion = true
+#     depends_on = [
+#     aws_iam_role_policy_attachment.ecs_task_exec_policy,
+#     aws_iam_role_policy_attachment.ecs_task_s3_policy,
+#     aws_route.internet
+#   ]
+# }
+

@@ -35,11 +35,11 @@ variable "memory" {
   default     = 512
 }
 
-variable "desired_count" {
-  description = "How many tasks to run"
-  type        = number
-  default     = 1
-}
+# variable "desired_count" {
+#   description = "How many tasks to run"
+#   type        = number
+#   default     = 1
+# }
 
 variable "image_url" {
   description = "ECR image URL"
