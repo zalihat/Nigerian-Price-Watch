@@ -5,10 +5,12 @@
 This project provisions a modular AWS data pipeline using Terraform. Each AWS service lives in its own directory under `infrastructure/services`, so you can provision and manage them independently.
 
 ---
-📖 Project Overview
+## 📖 Project Overview
+
+### ⚙️ Architecture
+![pipeline Architecture](./Doc/Architecture%20diagram.jpg) 
 
 
-🔹 Services and their roles in the project
 
 * **HashiCorp Terraform (IaC Tool) →** Provisions all AWS resources in a modular way, ensuring reusability and consistency.
 
@@ -45,7 +47,7 @@ This project provisions a modular AWS data pipeline using Terraform. Each AWS se
 
 
 ```
-project_name/
+aws-data-pipeline-terraform/
 │   README.md
 │
 ├───ecs/
@@ -82,8 +84,8 @@ IAM roles are defined in the **modules**, so you don’t need to configure them 
 ### 1. Clone the repository
 
 ```bash
-git clone <repo-url>
-cd project_name
+git clone https://github.com/zalihat/aws-data-pipeline-terraform.git 
+cd aws-data-pipeline-terraform
 ```
 
 ---
@@ -117,7 +119,7 @@ cd ../../lambda
 
 * Replace `ingest_to_s3.py` with your **ingestion logic**.
 * Edit `lambda_function.py` → update the `run_ingestion_logic` call for your use case.
-* Update your ingestion code to use the S3 bucket you created (instead of hardcoding names).
+
 
 Build the Lambda package (PowerShell):
 
@@ -128,10 +130,11 @@ Build the Lambda package (PowerShell):
 This will:
 
 * Create a build folder
+* Update your ingestion code to use the S3 bucket you created (instead of hardcoding names).
 * Install dependencies from `requirements.txt`
 * Package everything into `lambda_package.zip`
 
-Then deploy:
+Then deploy lambda function:
 
 ```bash
 cd ../infrastructure/services/lambda_ingest
@@ -220,6 +223,37 @@ terraform apply
 ```
 
 ✅ This orchestrates your Lambda-based ingestion pipeline.
+Once the Step Function is provisioned, it serves as the orchestrator of your pipeline:
+
+* It first triggers the Lambda ingestion function.
+
+* Then it runs the ECS task to clean and transform the data.
+
+* Finally, it updates the Glue Crawler so the catalog stays fresh.
+
+#### **Running the Pipeline**
+
+You have two options:
+
+1. Manual Execution
+
+    * Go to the AWS Step Functions Console.
+    * Select your state machine.
+
+    * Click Start Execution.
+
+    * The entire pipeline will run end-to-end.
+
+2. Scheduled Execution
+
+    * You can attach a CloudWatch Event rule (or EventBridge schedule) to trigger the state machine at fixed intervals (e.g., daily, hourly).
+
+**Example State Machine**
+
+This is what the state machine looks like after a successful execution
+
+![pipeline Architecture](./Doc/state%20machine.png) 
+
 
 ---
 
@@ -232,9 +266,16 @@ terraform plan
 terraform apply
 ```
 
-✅ This sets up **CloudWatch** for logs + metrics and **SNS** for pipeline notifications.
+✅ This sets up **CloudWatch** for logs + metrics 
+![Cloudwatch Dashboard](./Doc/cloudwatch%20dashboard.png) 
 
----
+and **SNS** for pipeline notifications.
+
+![SNS](./Doc/sns.png)
+
+
+
+
 
 
 ---
