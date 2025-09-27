@@ -267,11 +267,11 @@ terraform apply
 ```
 
 ✅ This sets up **CloudWatch** for logs + metrics 
-![Cloudwatch Dashboard](./Doc/cloudwatch%20dashboard.png) 
+![Cloudwatch Dashboard](./doc/cloudwatch%20dashboard.png) 
 
 and **SNS** for pipeline notifications.
 
-![SNS](./Doc/sns.png)
+![SNS](./doc/sns.png)
 
 
 
