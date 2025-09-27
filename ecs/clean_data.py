@@ -8,8 +8,8 @@ import time
 import tempfile
 import gc
 
-BUCKET_NAME = "nigeria-food-prices-bucket110112211"
-
+# BUCKET_NAME = "nigeria-food-prices-bucket110112211"
+BUCKET_NAME = "aws-data-pipeline-ng-food-prices"  # <--build will get the buckname from terraform s3 output
 
 class CleanData:
     def assign_regions_and_dates(self, df):

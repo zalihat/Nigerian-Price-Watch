@@ -1,17 +1,17 @@
 output "cluster_id" {
-  value = aws_ecs_cluster.this.id
+  value = module.ecs_fargate.cluster_id
+}
+output "cluster_arn" {
+  value = module.ecs_fargate.cluster_arn
 }
 
-output "cluster_arn" {
-  value = aws_ecs_cluster.this.arn
-}
 
 output "cluster_name" {
-  value = aws_ecs_cluster.this.name
+  value = module.ecs_fargate.cluster_name
 }
 
 output "task_definition_arn" {
-  value = aws_ecs_task_definition.this.arn
+  value = module.ecs_fargate.task_definition_arn
 }
 
 # output "service_name" {
@@ -19,15 +19,15 @@ output "task_definition_arn" {
 # }
 
 output "security_group_id" {
-  value = aws_security_group.ecs.id
+  value = module.ecs_fargate.security_group_id
 }
 
 output "subnet_ids" {
-  value = [aws_subnet.public_a.id, aws_subnet.public_b.id]
+  value = module.ecs_fargate.subnet_ids
 }
 
 output "vpc_id" {
-  value = aws_vpc.this.id
+  value = module.ecs_fargate.vpc_id
 }
 
 # output "ecs_task_arn" {
@@ -38,5 +38,5 @@ output "vpc_id" {
 #   value = aws_ecs_task.this.id
 # }
 output "ecs_log_group_name" {
-  value = aws_cloudwatch_log_group.ecs.name
+  value = module.ecs_fargate.ecs_log_group_name
 }

@@ -9,7 +9,7 @@ import boto3
 
 # --------- S3 CONFIG ------------
 s3 = boto3.client("s3")
-BUCKET_NAME = "nigeria-food-prices-bucket110112211"  # <-- replace with your Terraform bucket
+BUCKET_NAME = "aws-data-pipeline-ng-food-prices"  # <-- replace with your Terraform bucket
 
 class IngestData:
     def get_page_link(self, page_url):
@@ -210,4 +210,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

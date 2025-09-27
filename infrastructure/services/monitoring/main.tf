@@ -12,14 +12,42 @@ provider "aws" {
   region = "eu-west-1"
 }
 
+data "terraform_remote_state" "lambda" {
+  backend = "local"
+  config = {
+    path = "../lambda_ingest/terraform.tfstate"
+  }
+}
+
+data "terraform_remote_state" "ecs" {
+  backend = "local"
+  config = {
+    path = "../ecs/terraform.tfstate"
+  }
+}
+
+data "terraform_remote_state" "step_function" {
+  backend = "local"
+  config = {
+    path = "../step-function/terraform.tfstate"
+  }
+}
+
+data "terraform_remote_state" "crawler" {
+  backend = "local"
+  config = {
+    path = "../glue-crawler/terraform.tfstate"
+  }
+}
 
 module "monitoring" {
   source              = "../../modules/monitoring"
   project_name        = "price-watch"
-  lambda_function_name = "ingest_data_lambda"
-  ecs_cluster_name     = "price-watch-cluster"
-  step_function_arn    = "arn:aws:states:eu-west-1:123456789012:stateMachine:price-watch-sm"
-  glue_crawler_name    = "crawl_silver_bucket"
   alert_email          = "zalihatmohammed@gmail.com"
-  ecs_log_group_name = "/ecs/data-cleaner"
+  lambda_function_name = data.terraform_remote_state.lambda.outputs.lambda_function_name
+  ecs_cluster_name     = data.terraform_remote_state.ecs.outputs.cluster_name
+  step_function_arn    = data.terraform_remote_state.step_function.outputs.step_function_arn
+  glue_crawler_name    = data.terraform_remote_state.crawler.outputs.crawler_name
+  ecs_log_group_name = data.terraform_remote_state.ecs.outputs.ecs_log_group_name
+
 }
