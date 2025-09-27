@@ -8,7 +8,7 @@ This project provisions a modular AWS data pipeline using Terraform. Each AWS se
 ## 📖 Project Overview
 
 ### ⚙️ Architecture
-![pipeline Architecture](./Doc/Architecture%20diagram.jpg) 
+![pipeline Architecture](./doc/Architecture%20diagram.jpg) 
 
 
 
