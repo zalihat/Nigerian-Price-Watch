@@ -252,7 +252,7 @@ You have two options:
 
 This is what the state machine looks like after a successful execution
 
-![pipeline Architecture](./Doc/state%20machine.png) 
+![state machine](./doc/state%20machine.png) 
 
 
 ---
@@ -287,7 +287,7 @@ and **SNS** for pipeline notifications.
 3. **ECR** holds Docker image → ECS runs containerized job
 4. **CloudWatch** logs ECS outputs
 5. **Glue Crawler + Catalog** auto-discover schemas
-6. **SNS** sends completion notifications
+6. **SNS** sends notifications
 
 ---
 
