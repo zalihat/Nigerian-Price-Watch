@@ -8,7 +8,7 @@ This project provisions a modular AWS data pipeline using Terraform. Each AWS se
 ## 📖 Project Overview
 
 ### ⚙️ Architecture
-![pipeline Architecture](./Doc/Architecture%20diagram.jpg) 
+![pipeline Architecture](./doc/Architecture%20diagram.jpg) 
 
 
 
@@ -252,7 +252,7 @@ You have two options:
 
 This is what the state machine looks like after a successful execution
 
-![pipeline Architecture](./Doc/state%20machine.png) 
+![state machine](./doc/state%20machine.png) 
 
 
 ---
@@ -267,11 +267,11 @@ terraform apply
 ```
 
 ✅ This sets up **CloudWatch** for logs + metrics 
-![Cloudwatch Dashboard](./Doc/cloudwatch%20dashboard.png) 
+![Cloudwatch Dashboard](./doc/cloudwatch%20dashboard.png) 
 
 and **SNS** for pipeline notifications.
 
-![SNS](./Doc/sns.png)
+![SNS](./doc/sns.png)
 
 
 
@@ -287,7 +287,7 @@ and **SNS** for pipeline notifications.
 3. **ECR** holds Docker image → ECS runs containerized job
 4. **CloudWatch** logs ECS outputs
 5. **Glue Crawler + Catalog** auto-discover schemas
-6. **SNS** sends completion notifications
+6. **SNS** sends notifications
 
 ---
 
